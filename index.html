@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>StormCam 风暴相机 — 实时电影感拍摄</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#07090d">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="icons/icon-192.png">
+</head>
+<body>
+
+<div id="stage">
+  <canvas id="clean"></canvas>
+  <canvas id="fx"></canvas>
+  <div id="gridOv" class="hidden"></div>
+  <div id="flash"></div>
+</div>
+
+<!-- 顶部 HUD -->
+<header id="hud" class="hidden">
+  <div class="hud-left">
+    <span id="recDot" class="rec-dot hidden"></span>
+    <span id="tc" class="mono">STBY 00:00:00:00</span>
+  </div>
+  <div class="hud-center mono">
+    <span id="demoBadge" class="badge hidden">DEMO</span>
+    <span id="logBadge" class="badge log">LOG</span>
+    <span id="fmt"></span>
+    <span class="dim">|</span>
+    <span id="lutName"></span>
+  </div>
+  <div class="hud-right">
+    <div class="meter"><i id="mL"></i><i id="mR"></i></div>
+    <button id="setBtn" class="hbtn" title="设置">⚙</button>
+  </div>
+</header>
+
+<!-- 左侧:监视工具 -->
+<aside id="leftStrip" class="strip hidden">
+  <button id="tGrid" class="tbtn" title="构图网格"><span class="ic">⊞</span><span class="lb">网格</span></button>
+  <button id="tZebra" class="tbtn" title="斑马纹(过曝提示)"><span class="ic">▥</span><span class="lb">斑马</span></button>
+  <button id="tFalse" class="tbtn" title="假色(曝光分布)"><span class="ic">🎨</span><span class="lb">假色</span></button>
+  <button id="tPeak" class="tbtn" title="峰值对焦"><span class="ic">✦</span><span class="lb">峰值</span></button>
+  <button id="tHist" class="tbtn" title="RGB 直方图"><span class="ic">📊</span><span class="lb">直方</span></button>
+  <button id="tRatio" class="tbtn" title="画幅比例"><span class="ic">▭</span><span class="lb">原生</span></button>
+</aside>
+
+<!-- 右侧:摄影机参数 -->
+<aside id="rightStrip" class="strip hidden">
+  <button class="pbtn" data-p="ev"><span class="ic">±</span><span class="lb">曝光</span></button>
+  <button class="pbtn" data-p="wb"><span class="ic">K</span><span class="lb">色温</span></button>
+  <button class="pbtn" data-p="tint"><span class="ic">T</span><span class="lb">色调</span></button>
+  <button class="pbtn" data-p="iso"><span class="ic">ISO</span><span class="lb">感光</span></button>
+  <button class="pbtn" data-p="shutter"><span class="ic">θ</span><span class="lb">快门</span></button>
+  <button class="pbtn" data-p="zoom"><span class="ic">⌕</span><span class="lb">变焦</span></button>
+</aside>
+
+<!-- 参数抽屉 -->
+<div id="paramDrawer" class="hidden">
+  <span id="paramTitle"></span>
+  <input id="paramRange" type="range">
+  <span id="paramVal" class="mono"></span>
+  <button id="paramReset">复位</button>
+  <button id="paramClose">✕</button>
+</div>
+
+<!-- 直方图 -->
+<div id="histBox" class="hidden"><canvas id="hist" width="128" height="72"></canvas></div>
+
+<!-- 影调栏 -->
+<div id="lutRow" class="hidden">
+  <button id="logChip" class="logchip on" title="Log + LUT 实时影调直出">LOG</button>
+  <div id="lutBar"></div>
+</div>
+
+<!-- 底部控制 -->
+<footer id="ctrl" class="hidden">
+  <div class="mode-switch">
+    <button id="modePhoto" class="on">照片</button>
+    <button id="modeVideo">视频</button>
+  </div>
+  <div class="ctrl-row">
+    <button id="galleryBtn" title="相册"><span id="galleryCount"></span></button>
+    <button id="shutter" title="快门(空格)"><i></i></button>
+    <button id="flipBtn" title="翻转摄像头">⟳</button>
+  </div>
+</footer>
+
+<!-- 相册 -->
+<div id="galleryModal" class="modal hidden">
+  <div class="modal-head">
+    <button id="backBtn" class="hidden">‹ 相册</button>
+    <h3>相册</h3>
+    <button id="galleryClose">✕</button>
+  </div>
+  <div id="galleryGrid"></div>
+  <div id="viewerBody" class="hidden"></div>
+  <div id="viewerBar" class="hidden">
+    <button id="dlBtn">⬇ 下载</button>
+    <button id="delBtn">🗑 删除</button>
+  </div>
+</div>
+
+<!-- 设置 -->
+<div id="settingsModal" class="modal hidden">
+  <div class="modal-head"><h3>设置</h3><button id="setClose">✕</button></div>
+  <div class="set-body">
+    <label class="set-row">分辨率
+      <span class="seg">
+        <label><input type="radio" name="res" value="720">720p</label>
+        <label><input type="radio" name="res" value="1080">1080p</label>
+      </span>
+    </label>
+    <label class="set-row">帧率
+      <span class="seg">
+        <label><input type="radio" name="fps" value="24">24</label>
+        <label><input type="radio" name="fps" value="25">25</label>
+        <label><input type="radio" name="fps" value="30">30</label>
+        <label><input type="radio" name="fps" value="60">60</label>
+      </span>
+    </label>
+    <label class="set-row">麦克风 <input id="micChk" type="checkbox"></label>
+    <label class="set-row">镜像画面 <input id="mirrorChk" type="checkbox"></label>
+    <button id="installBtn" class="hidden">📲 安装为应用(添加到主屏幕)</button>
+    <p class="set-tip">拍摄与录制只在本地进行,数据不会上传。<br>录制格式为 WebM;斑马纹/假色/峰值对焦仅监看,不会写入成品。</p>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- 开机画面 -->
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-logo">🌪️</div>
+    <h1>风暴相机 <small>StormCam</small></h1>
+    <p class="tagline">实时电影感拍摄 · Log + 影调直出 · 专业机内控制</p>
+    <div class="gate-btns">
+      <button id="btnStart" class="primary">开启相机</button>
+      <button id="btnDemo">演示模式(无摄像头)</button>
+    </div>
+    <p id="gateErr" class="gate-err hidden"></p>
+    <p class="gate-note">画面仅在本地处理,不会上传;需要 Chrome / Edge 等支持摄像头的浏览器。</p>
+  </div>
+</div>
+
+<video id="video" playsinline muted></video>
+<script src="js/lut.js"></script>
+<script src="js/gl.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

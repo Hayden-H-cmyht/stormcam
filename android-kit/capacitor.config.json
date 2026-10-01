@@ -1,0 +1,9 @@
+{
+  "appId": "com.stormcam.app",
+  "appName": "StormCam 风暴相机",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": true
+  }
+}
