@@ -1,5 +1,7 @@
 # 🌪️ StormCam 风暴相机
 
+**线上地址:https://hayden-h-cmyht.github.io/stormcam/** (手机/电脑浏览器直接打开,可「安装为应用」离线使用)
+
 一个致敬「飓风相机」的**实时电影感拍摄**网页应用:WebGL2 实时调色管线,「Log + 影调(LUT)直出」,配专业机内监视工具。纯前端,零依赖,无需安装。
 
 ![tech](https://img.shields.io/badge/tech-HTML5%20%2B%20WebGL2-blue) ![deps](https://img.shields.io/badge/dependencies-0-success)
